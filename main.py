@@ -18,7 +18,7 @@ tweet_prompt = PromptTemplate(
 
 # Initialize the Groq model
 # Using Llama3 8b model, which is fast and efficient on Groq
-groq_model = ChatGroq(model_name="llama3-70b-8192")
+groq_model = ChatGroq(model_name="llama-3.3-70b-versatile")
 
 # Create the LLM chain using LangChain Expression Language (LCEL)
 tweet_chain = tweet_prompt | groq_model
