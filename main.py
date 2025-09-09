@@ -1,37 +1,58 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain import LLMChain
-from langchain import PromptTemplate
-
+# Import necessary libraries
+from langchain_groq import ChatGroq
+from langchain_core.prompts import PromptTemplate
 import streamlit as st
 import os
 
-os.environ['GOOGLE_API_KEY'] = st.secrets['GOOGLE_API_KEY']
+# Set the Groq API key from Streamlit secrets
+# Make sure to set a secret named 'GROQ_API_KEY' in your Streamlit Cloud app
+os.environ['GROQ_API_KEY'] = st.secrets['GROQ_API_KEY']
 
-# Create prompt template for generating tweets
+# Create a prompt template for generating tweets
+tweet_template = "Generate {number} tweets about the following topic: {topic}. Each tweet should be engaging and concise."
 
-tweet_template = "Give me {number} tweets on {topic}"
+tweet_prompt = PromptTemplate(
+    template=tweet_template,
+    input_variables=['number', 'topic']
+)
 
-tweet_prompt = PromptTemplate(template = tweet_template, input_variables = ['number', 'topic'])
+# Initialize the Groq model
+# Using Llama3 8b model, which is fast and efficient on Groq
+groq_model = ChatGroq(model_name="llama3-8b-8192")
 
-# Initialize Google's Gemini model
-gemini_model = ChatGoogleGenerativeAI(model = "gemini-1.5-flash-latest")
+# Create the LLM chain using LangChain Expression Language (LCEL)
+tweet_chain = tweet_prompt | groq_model
 
+# --- Streamlit App ---
 
-# Create LLM chain using the prompt template and model
-tweet_chain = tweet_prompt | gemini_model
+st.set_page_config(page_title="Tweet Generator", layout="centered")
+st.title("Tweet Generator with Groq")
+st.subheader("Generate tweets instantly using the power of Groq's LPU")
 
+# Get user input for the topic
+topic = st.text_input("Enter the topic for the tweets:", placeholder="e.g., The future of AI")
 
-import streamlit as st
+# Get user input for the number of tweets
+number = st.number_input(
+    "Number of tweets to generate:",
+    min_value=1,
+    max_value=10,
+    value=1,
+    step=1
+)
 
-st.header("Tweet Generator - VINEET")
-
-st.subheader("Generate tweets using Generative AI")
-
-topic = st.text_input("Topic")
-
-number = st.number_input("Number of tweets", min_value = 1, max_value = 10, value = 1, step = 1)
-
-if st.button("Generate"):
-    tweets = tweet_chain.invoke({"number" : number, "topic" : topic})
-    st.write(tweets.content)
-    
+# Generate tweets when the button is clicked
+if st.button("Generate Tweets"):
+    if topic:
+        with st.spinner("Generating tweets..."):
+            try:
+                # Invoke the chain with the user's input
+                response = tweet_chain.invoke({"number": number, "topic": topic})
+                
+                # Display the generated tweets
+                st.success("Tweets generated successfully!")
+                st.write(response.content)
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+    else:
+        st.warning("Please enter a topic to generate tweets.")
